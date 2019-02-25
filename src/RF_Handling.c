@@ -103,9 +103,10 @@ bool CheckRFBucket(uint16_t duration, uint16_t bucket, uint16_t delta)
 bool CheckRFSyncBucket(uint16_t duration, uint16_t bucket)
 {
 	uint16_t delta = compute_delta(bucket);
-	delta = delta > TOLERANCE_MAX ? TOLERANCE_MAX : delta;
-	delta = delta < TOLERANCE_MIN ? TOLERANCE_MIN : delta;
-	return CheckRFBucket(duration, bucket, delta);
+	//delta = delta > TOLERANCE_MAX ? TOLERANCE_MAX : delta;
+	//delta = delta < TOLERANCE_MIN ? TOLERANCE_MIN : delta;
+	return ((bucket - delta) <= duration);
+	//return CheckRFBucket(duration, bucket, delta);
 }
 
 bool DecodeBucket(uint8_t i, bool high_low, uint16_t duration,
@@ -254,7 +255,7 @@ void HandleRFBucket(uint16_t duration, bool high_low)
 			if (START_GET(status[0]) == 0)
 			{
 				// if PT226x standard sniffing calculate the pulse time by the longer sync bucket
-				// this will enable receive PT226x in a range of PT226x_SYNC_MIN <-> 32767µs
+				// this will enable receive PT226x in a range of PT226x_SYNC_MIN <-> 32767Âµs
 				if (duration > PT226x_SYNC_MIN && !high_low) // && (duration < PT226x_SYNC_MAX))
 				{
 					// increment start because of the skipped first high bucket
@@ -365,7 +366,7 @@ void PCA0_channel0EventCb()
 	PCA0L = 0x00;
 	PCA0MD = flags;
 
-	// add bucket if a maximum of 0x7FFF * 10µs = 327670µs
+	// add bucket if a maximum of 0x7FFF * 10Âµs = 327670Âµs
 	if (current_capture_value < 0x8000)
 	{
 		buffer_in(current_capture_value | ((uint16_t)(!R_DATA) << 15));
@@ -395,7 +396,7 @@ uint8_t PCA0_DoSniffing(uint8_t active_command)
 
 	memset(status, 0, sizeof(PROTOCOL_STATUS) * PROTOCOLCOUNT);
 
-	// restore timer to 100000Hz, 10µs interval
+	// restore timer to 100000Hz, 10Âµs interval
 	SetTimer0Overflow(0x0B);
 
 	// enable interrupt for RF receiving
