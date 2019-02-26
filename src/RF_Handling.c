@@ -103,8 +103,8 @@ bool CheckRFBucket(uint16_t duration, uint16_t bucket, uint16_t delta)
 bool CheckRFSyncBucket(uint16_t duration, uint16_t bucket)
 {
 	uint16_t delta = compute_delta(bucket);
-	//delta = delta > TOLERANCE_MAX ? TOLERANCE_MAX : delta;
-	//delta = delta < TOLERANCE_MIN ? TOLERANCE_MIN : delta;
+	delta = delta > TOLERANCE_MAX ? TOLERANCE_MAX : delta;
+	delta = delta < TOLERANCE_MIN ? TOLERANCE_MIN : delta;
 	return CheckRFBucket(duration, bucket, delta);
 }
 
