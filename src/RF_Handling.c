@@ -105,8 +105,7 @@ bool CheckRFSyncBucket(uint16_t duration, uint16_t bucket)
 	uint16_t delta = compute_delta(bucket);
 	//delta = delta > TOLERANCE_MAX ? TOLERANCE_MAX : delta;
 	//delta = delta < TOLERANCE_MIN ? TOLERANCE_MIN : delta;
-	return ((bucket - delta) <= duration);
-	//return CheckRFBucket(duration, bucket, delta);
+	return CheckRFBucket(duration, bucket, delta);
 }
 
 bool DecodeBucket(uint8_t i, bool high_low, uint16_t duration,
@@ -290,6 +289,17 @@ void HandleRFBucket(uint16_t duration, bool high_low)
 					// check if sync bucket high/low is matching
 					if (BUCKET_STATE(PROTOCOL_DATA[i].start.dat[START_GET(status[i])]) != high_low)
 						continue;
+
+					// relax requirement if first sync pulse is low (silence), that's allowed to be much longer
+					if (START_GET(status[i]) == 0 && BUCKET_STATE(PROTOCOL_DATA[i].start.dat[0]) == 0 && high_low == 0)
+					{
+						if (duration >= (PROTOCOL_DATA[i].buckets.dat[BUCKET_NR(PROTOCOL_DATA[i].start.dat[0])] >> 1))
+						{
+							START_INC(status[i]);
+							continue;
+						}
+					}
+
 
 					if (CheckRFSyncBucket(duration, PROTOCOL_DATA[i].buckets.dat[BUCKET_NR(PROTOCOL_DATA[i].start.dat[START_GET(status[i])])]))
 					{
