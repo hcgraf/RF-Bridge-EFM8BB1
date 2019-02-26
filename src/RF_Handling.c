@@ -246,42 +246,38 @@ void HandleRFBucket(uint16_t duration, bool high_low)
 		return;
 	}
 
-	// handle the buckets by standard or advanced decoding
-	switch(sniffing_mode)
+	// always handle standard decoding
+	// check if protocol was not started
+	if (START_GET(status[0]) == 0)
 	{
-		case STANDARD:
-			// check if protocol was not started
-			if (START_GET(status[0]) == 0)
-			{
-				// if PT226x standard sniffing calculate the pulse time by the longer sync bucket
-				// this will enable receive PT226x in a range of PT226x_SYNC_MIN <-> 32767µs
-				if (duration > PT226x_SYNC_MIN && !high_low) // && (duration < PT226x_SYNC_MAX))
-				{
-					// increment start because of the skipped first high bucket
-					START_INC(status[0]);
-					START_INC(status[0]);
-					SYNC_LOW = duration;
+		// if PT226x standard sniffing calculate the pulse time by the longer sync bucket
+		// this will enable receive PT226x in a range of PT226x_SYNC_MIN <-> 32767µs
+		if (duration > PT226x_SYNC_MIN && !high_low) // && (duration < PT226x_SYNC_MAX))
+		{
+			// increment start because of the skipped first high bucket
+			START_INC(status[0]);
+			START_INC(status[0]);
+			SYNC_LOW = duration;
 
-					buckets[0] = (duration / 31) + 1;
-					buckets[1] = buckets[0] * 3;
-					buckets[2] = duration;
-				}
-			}
-			// if sync is finished check if bit0 or bit1 is starting
-			else if (START_GET(status[0]) == 2)
-			{
-				DecodeBucket(0, high_low, duration,
-						buckets,
-						PROTOCOL_DATA[0].bit0.dat, PROTOCOL_DATA[0].bit0.size,
-						PROTOCOL_DATA[0].bit1.dat, PROTOCOL_DATA[0].bit1.size,
-						PROTOCOL_DATA[0].bit_count
-						);
-			}
-			break;
+			buckets[0] = (duration / 31) + 1;
+			buckets[1] = buckets[0] * 3;
+			buckets[2] = duration;
+		}
+	}
+	// if sync is finished check if bit0 or bit1 is starting
+	else if (START_GET(status[0]) == 2)
+	{
+		DecodeBucket(0, high_low, duration,
+				buckets,
+				PROTOCOL_DATA[0].bit0.dat, PROTOCOL_DATA[0].bit0.size,
+				PROTOCOL_DATA[0].bit1.dat, PROTOCOL_DATA[0].bit1.size,
+				PROTOCOL_DATA[0].bit_count
+				);
+	}
 
-		case ADVANCED:
+	if (sniffing_mode == ADVANCED) {
 			// check each protocol for each bucket
-			for (i = 0; i < PROTOCOLCOUNT; i++)
+			for (i = 1; i < PROTOCOLCOUNT; i++)
 			{
 				// protocol started, check if sync is finished
 				if (START_GET(status[i]) < PROTOCOL_DATA[i].start.size)
@@ -324,8 +320,7 @@ void HandleRFBucket(uint16_t duration, bool high_low)
 						return;
 				}
 			}
-			break;
-	}	// switch(sniffing_mode)
+	}	// advanced sniffing_mode
 }
 
 void buffer_in(uint16_t bucket)
